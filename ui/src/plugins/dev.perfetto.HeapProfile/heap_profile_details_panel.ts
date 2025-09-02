@@ -191,60 +191,60 @@ function flamegraphMetrics(
     case ProfileType.NATIVE_HEAP_PROFILE:
       return flamegraphMetricsForHeapProfile(ts, upid, [
         {
-          name: 'Unreleased Malloc Size',
-          unit: 'B',
-          columnName: 'self_size',
-        },
-        {
-          name: 'Unreleased Malloc Count',
-          unit: '',
-          columnName: 'self_count',
-        },
-        {
-          name: 'Total Malloc Size',
+          name: 'Allocation Size',
           unit: 'B',
           columnName: 'self_alloc_size',
         },
         {
-          name: 'Total Malloc Count',
+          name: 'Allocation Count',
           unit: '',
           columnName: 'self_alloc_count',
+        },
+        {
+          name: 'Free Size',
+          unit: 'B',
+          columnName: 'self_free_size',
+        },
+        {
+          name: 'Free Count',
+          unit: '',
+          columnName: 'self_free_count',
         },
       ]);
     case ProfileType.HEAP_PROFILE:
       return flamegraphMetricsForHeapProfile(ts, upid, [
         {
-          name: 'Unreleased Size',
-          unit: 'B',
-          columnName: 'self_size',
-        },
-        {
-          name: 'Unreleased Count',
-          unit: '',
-          columnName: 'self_count',
-        },
-        {
-          name: 'Total Size',
+          name: 'Allocation Size',
           unit: 'B',
           columnName: 'self_alloc_size',
         },
         {
-          name: 'Total Count',
+          name: 'Allocation Count',
           unit: '',
           columnName: 'self_alloc_count',
+        },
+        {
+          name: 'Free Size',
+          unit: 'B',
+          columnName: 'self_free_size',
+        },
+        {
+          name: 'Free Count',
+          unit: '',
+          columnName: 'self_free_count',
         },
       ]);
     case ProfileType.JAVA_HEAP_SAMPLES:
       return flamegraphMetricsForHeapProfile(ts, upid, [
         {
-          name: 'Total Allocation Size',
+          name: 'Allocation Size',
           unit: 'B',
-          columnName: 'self_size',
+          columnName: 'self_alloc_size',
         },
         {
-          name: 'Total Allocation Count',
+          name: 'Allocation Count',
           unit: '',
-          columnName: 'self_count',
+          columnName: 'self_alloc_count',
         },
       ]);
     case ProfileType.MIXED_HEAP_PROFILE:
@@ -252,12 +252,22 @@ function flamegraphMetrics(
         {
           name: 'Allocation Size (malloc + java)',
           unit: 'B',
-          columnName: 'self_size',
+          columnName: 'self_alloc_size',
         },
         {
           name: 'Allocation Count (malloc + java)',
           unit: '',
-          columnName: 'self_count',
+          columnName: 'self_alloc_count',
+        },
+        {
+          name: 'Free Size (malloc + java)',
+          unit: 'B',
+          columnName: 'self_free_size',
+        },
+        {
+          name: 'Free Count (malloc + java)',
+          unit: '',
+          columnName: 'self_free_count',
         },
       ]);
     case ProfileType.JAVA_HEAP_GRAPH:
@@ -429,16 +439,20 @@ function flamegraphMetricsForHeapProfile(
           self_size,
           self_count,
           self_alloc_size,
-          self_alloc_count
+          self_alloc_count,
+          self_free_size,
+          self_free_count
         from _android_heap_profile_callstacks_for_allocations!((
           select
             callsite_id,
             size,
             count,
             max(size, 0) as alloc_size,
-            max(count, 0) as alloc_count
+            max(count, 0) as alloc_count,
+            -min(size, 0) as free_size,
+            -min(count, 0) as free_count
           from heap_profile_allocation a
-          where a.ts <= ${ts} and a.upid = ${upid}
+          where a.ts = ${ts} and a.upid = ${upid}
         ))
       )
     `,
